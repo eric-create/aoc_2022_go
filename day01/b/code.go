@@ -14,8 +14,14 @@ func main() {
 
 	sort.Ints(bags)
 
-	// Get the biggest bag.
-	fmt.Println(strconv.Itoa(bags[len(bags)-1]))
+	// Get the three biggest bags.
+	bags = bags[len(bags)-3:]
+	sum := 0
+	for i := len(bags) - 3; i < len(bags); i++ {
+		sum += bags[i]
+	}
+
+	fmt.Println(strconv.Itoa(sum))
 }
 
 func exitOnError(err error) {

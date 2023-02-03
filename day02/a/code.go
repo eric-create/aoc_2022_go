@@ -10,6 +10,10 @@ type Match struct {
 	Call, Response string
 }
 
+var (
+	rock, paper, scissors = getSymbols()
+)
+
 func main() {
 	lines, err := getLines("./input.txt")
 	exitOnError(err)
@@ -17,9 +21,11 @@ func main() {
 	normalize(&matches)
 	scores := getScores(matches)
 
+	totalScore := 0
 	for _, score := range scores {
-		fmt.Println(score)
+		totalScore += score
 	}
+	fmt.Println(totalScore)
 }
 
 func getScores(matches []Match) []int {
@@ -36,15 +42,16 @@ func getScores(matches []Match) []int {
 }
 
 type Symbol struct {
+	Name    string
 	Above   *Symbol
 	Beneath *Symbol
 }
 
 // Returns three instances of Symbol: "rock", "paper", and "scissors".
 func getSymbols() (rock, paper, scissors Symbol) {
-	rock = Symbol{}
-	paper = Symbol{}
-	scissors = Symbol{}
+	rock = Symbol{Name: "rock"}
+	paper = Symbol{Name: "paper"}
+	scissors = Symbol{Name: "scissors"}
 
 	rock.Above = &scissors
 	rock.Beneath = &paper
@@ -58,7 +65,6 @@ func getSymbols() (rock, paper, scissors Symbol) {
 
 // Returns the represented symbol for a given letter.
 func getSymbol(letter string) Symbol {
-	rock, paper, scissors := getSymbols()
 	var symbol Symbol
 
 	switch letter {
@@ -91,11 +97,11 @@ func getMatchScore(match Match) int {
 
 func getShapeScore(match Match) int {
 	switch response := match.Response; response {
-	case "X":
+	case "A":
 		return 1
-	case "Y":
+	case "B":
 		return 2
-	case "Z":
+	case "C":
 		return 3
 	}
 	return 0

@@ -58,11 +58,11 @@ func get_duplicate(first string, second string) (string, error) {
 			return string(char), nil
 		}
 	}
-	return "", errors.New("Could not find a duplicate!")
+	return "", errors.New(fmt.Sprintf("Could not find a duplicate in %v %v", first, second))
 }
 
 func get_compartements(line string) (string, string) {
-	return line[:len(line)/2-1], line[len(line)/2:]
+	return line[:len(line)/2], line[len(line)/2:]
 }
 
 func read(path string) ([]string, error) {

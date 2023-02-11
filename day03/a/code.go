@@ -1,10 +1,9 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -16,7 +15,6 @@ func main() {
 		log.Fatal("Failed to read")
 	}
 
-	duplicates := []string{}
 	priorities := []int{}
 
 	for _, line := range lines {
@@ -27,7 +25,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		duplicates = append(duplicates, duplicate)
 		priorities = append(priorities, get_priority(duplicate))
 	}
 
@@ -48,7 +45,6 @@ func get_priority(duplicate string) int {
 		priority = int(duplicate[0]) - 96
 	}
 
-	fmt.Println(priority)
 	return priority
 }
 
@@ -58,7 +54,7 @@ func get_duplicate(first string, second string) (string, error) {
 			return string(char), nil
 		}
 	}
-	return "", errors.New(fmt.Sprintf("Could not find a duplicate in %v %v", first, second))
+	return "", fmt.Errorf("should not find a duplicate in %v %v", first, second)
 }
 
 func get_compartements(line string) (string, string) {
@@ -66,7 +62,7 @@ func get_compartements(line string) (string, string) {
 }
 
 func read(path string) ([]string, error) {
-	if content, err := ioutil.ReadFile(path); err == nil {
+	if content, err := os.ReadFile(path); err == nil {
 		return strings.Split(string(content), "\n"), nil
 	} else {
 		return nil, err

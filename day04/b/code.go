@@ -20,8 +20,9 @@ func main() {
 
 	sum := 0
 	for _, pair := range pairs {
-		// fmt.Println(pair[0].String(), pair[1].String())
-		if pair[0].IsSubset(pair[1]) || pair[1].IsSubset(pair[0]) {
+		intersection := pair[0].Intersect(pair[1])
+
+		if len(intersection.ToSlice()) > 0 {
 			sum++
 		}
 	}

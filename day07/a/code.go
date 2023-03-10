@@ -22,7 +22,7 @@ func PrintTree(node Node, offset string) {
 		fmt.Println(offset+"  "+filename, filesize)
 	}
 	for _, child := range node.Children {
-		PrintTree(child, offset+"  ")
+		PrintTree(*child, offset+"  ")
 	}
 }
 
@@ -56,14 +56,13 @@ func Populate(node *Node, lines *[]string) {
 	if line := PopLine(lines); line != "" {
 
 		if isCd(line) {
-			Populate(cd(node, line), lines)
+			node = cd(node, line)
 
 		} else if isLs(line) {
-
-			// Discard the line that only calls the ls command.
-			// PopLine(lines)
 			AppendElements(node, lines)
 		}
+
+		Populate(node, lines)
 	}
 }
 
@@ -80,7 +79,7 @@ func AppendElement(node *Node, lines *[]string) {
 
 	if strings.HasPrefix(line, "dir ") {
 		newChild := NewNode(line[4:], node)
-		(*node).Children = append((*node).Children, newChild)
+		(*node).Children = append((*node).Children, &newChild)
 
 	} else {
 		filesize, _ := strconv.Atoi(strings.Split(line, " ")[0])
@@ -104,7 +103,7 @@ func cd(node *Node, line string) *Node {
 type Node struct {
 	Name     string
 	Parent   *Node
-	Children []Node
+	Children []*Node
 	Files    map[string]int
 }
 
@@ -118,14 +117,14 @@ func (node *Node) root() *Node {
 func (node *Node) get_node(name string) *Node {
 	for _, child := range (*node).Children {
 		if child.Name == name {
-			return &child
+			return child
 		}
 	}
 	return node
 }
 
 func NewNode(name string, parent *Node) Node {
-	newNode := Node{Name: name, Parent: parent, Children: []Node{}, Files: map[string]int{}}
+	newNode := Node{Name: name, Parent: parent, Children: []*Node{}, Files: map[string]int{}}
 	return newNode
 }
 

@@ -13,17 +13,40 @@ func main() {
 
 	node := NewNode("/", nil)
 	Populate(&node, &lines)
-	PrintTree(node, "")
+	UpdateSizes(&node)
+	// PrintTree(node, "")
+	fmt.Println("---")
+	fmt.Println(GetCandidates(node, 0))
+}
+
+func GetCandidates(node Node, sum int) int {
+	for _, node := range node.Children {
+		sum += GetCandidates(*node, 0)
+	}
+	if node.Size < 100000 {
+		return sum + node.Size
+	} else {
+		return sum
+	}
 }
 
 func PrintTree(node Node, offset string) {
-	fmt.Println(offset + node.Name)
+	fmt.Println(offset+node.Name, "( size:", node.Size, ")")
 	for filename, filesize := range node.Files {
 		fmt.Println(offset+"  "+filename, filesize)
 	}
 	for _, child := range node.Children {
 		PrintTree(*child, offset+"  ")
 	}
+}
+
+func UpdateSizes(node *Node) {
+	sum := 0
+	for _, child := range (*node).Children {
+		UpdateSizes(child)
+		sum += (*child).Size
+	}
+	(*node).Size += sum
 }
 
 // Pops the element at index 0.
@@ -85,6 +108,7 @@ func AppendElement(node *Node, lines *[]string) {
 		filesize, _ := strconv.Atoi(strings.Split(line, " ")[0])
 		filename := strings.Split(line, " ")[1]
 		(*node).Files[filename] = filesize
+		(*node).Size += filesize
 	}
 }
 
@@ -105,6 +129,7 @@ type Node struct {
 	Parent   *Node
 	Children []*Node
 	Files    map[string]int
+	Size     int
 }
 
 func (node *Node) root() *Node {
@@ -124,7 +149,12 @@ func (node *Node) get_node(name string) *Node {
 }
 
 func NewNode(name string, parent *Node) Node {
-	newNode := Node{Name: name, Parent: parent, Children: []*Node{}, Files: map[string]int{}}
+	newNode := Node{
+		Name:     name,
+		Parent:   parent,
+		Children: []*Node{},
+		Files:    map[string]int{},
+		Size:     0}
 	return newNode
 }
 

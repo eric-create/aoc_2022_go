@@ -13,15 +13,15 @@ func main() {
 	lines := ReadLines("./input.txt")
 	movements := Movements(lines)
 
-	tail := Knot{0, 0, nil, nil, [][2]int{}}
-	head := Knot{0, 0, nil, &tail, [][2]int{}}
-	tail.Head = &head
+	head := Knot{11, 5, nil, nil, [][2]int{}, "H"} // 11, 5
+	head.AddKnots(8, 11, 5)
 
 	for _, movement := range movements {
 		Move(&head, movement)
 	}
 
-	fmt.Println(len(tail.History))
+	tail := head.AbsoluteTail()
+	fmt.Println(tail.Name, len(tail.History))
 }
 
 func Move(knot *Knot, movement Movement) {
@@ -49,24 +49,29 @@ func Move(knot *Knot, movement Movement) {
 	}
 }
 
-// // Only works for the example
-// func Print(knot Knot) {
-// 	head := knot.GetCapital()
+func Print(knot Knot) {
+	for y := 20; y >= 0; y-- { // 20 4
+		for x := 0; x <= 25; x++ { // 25 5
+			if x == 11 && y == 5 {
+				fmt.Print("s")
+			} else {
+				fmt.Print(GetSymbol(x, y, *knot.AbsoluteHead()))
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Println()
+}
 
-// 	for y := 4; y >= 0; y-- {
-// 		for x := 0; x <= 5; x++ {
-// 			if head.XPos == x && head.YPos == y {
-// 				fmt.Print("H")
-// 			} else if head.Tail.XPos == x && head.Tail.YPos == y {
-// 				fmt.Print("T")
-// 			} else {
-// 				fmt.Print(".")
-// 			}
-// 		}
-// 		fmt.Println()
-// 	}
-// 	fmt.Println()
-// }
+func GetSymbol(xPos int, yPos int, knot Knot) string {
+	if knot.XPos == xPos && knot.YPos == yPos {
+		return knot.Name
+	} else if knot.Tail != nil {
+		return GetSymbol(xPos, yPos, *knot.Tail)
+	} else {
+		return "."
+	}
+}
 
 func Normalize(i int) int {
 	if i < 0 {
@@ -85,13 +90,28 @@ type Knot struct {
 	Head    *Knot
 	Tail    *Knot
 	History [][2]int
+	Name    string
 }
 
-func (knot Knot) GetCapital() *Knot {
+func (knot Knot) AbsoluteHead() *Knot {
 	if knot.Head != nil {
-		return knot.Head.GetCapital()
+		return knot.Head.AbsoluteHead()
 	}
 	return &knot
+}
+
+func (knot Knot) AbsoluteTail() *Knot {
+	if knot.Tail != nil {
+		return knot.Tail.AbsoluteTail()
+	}
+	return &knot
+}
+
+func (knot *Knot) AddKnots(knotCount int, xPos int, yPos int) {
+	if knotCount >= 0 {
+		knot.Tail = &Knot{xPos, yPos, knot, nil, [][2]int{}, strconv.Itoa(9 - knotCount)}
+		knot.Tail.AddKnots(knotCount-1, xPos, yPos)
+	}
 }
 
 func (knot *Knot) ExtendHistory() {

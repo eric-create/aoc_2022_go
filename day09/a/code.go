@@ -24,34 +24,34 @@ func main() {
 	fmt.Println(len(tail.History))
 }
 
-func Move(head *Knot, movement Movement) {
-	head.ExtendHistory()
+func Move(knot *Knot, movement Movement) {
+	knot.ExtendHistory()
 
 	if movement.Distance > 0 {
-		head.XPos += movement.XDir
-		head.YPos += movement.YDir
+		knot.XPos += movement.XDir
+		knot.YPos += movement.YDir
 
-		if head.Tail != nil {
-			xDistance := math.Abs(float64(head.XPos) - float64(head.Tail.XPos))
-			yDistance := math.Abs(float64(head.YPos) - float64(head.Tail.YPos))
+		if knot.Tail != nil {
+			xDistance := math.Abs(float64(knot.XPos) - float64(knot.Tail.XPos))
+			yDistance := math.Abs(float64(knot.YPos) - float64(knot.Tail.YPos))
 
 			// Tail follows in horizontal or vertical direction.
 			if xDistance+yDistance == 2 && (xDistance == 2 || yDistance == 2) {
-				Move(head.Tail, Movement{movement.XDir, movement.YDir, 1})
+				Move(knot.Tail, Movement{movement.XDir, movement.YDir, 1})
 			}
 
 			// Tail follows in diagonal direction.
 			if xDistance+yDistance == 3 {
-				Move(head.Tail, Movement{
-					XDir:     Normalize(head.XPos - head.Tail.XPos),
-					YDir:     Normalize(head.YPos - head.Tail.YPos),
+				Move(knot.Tail, Movement{
+					XDir:     Normalize(knot.XPos - knot.Tail.XPos),
+					YDir:     Normalize(knot.YPos - knot.Tail.YPos),
 					Distance: 1})
 			}
 		}
 
 		// Print(*head)
 		movement.Distance -= 1
-		Move(head, movement)
+		Move(knot, movement)
 	}
 }
 

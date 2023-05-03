@@ -14,7 +14,7 @@ func main() {
 	// in the text file is being processed.
 	lines = append(lines, "")
 	monkeys := GetMonkeys(lines)
-	rounds := 20
+	rounds := 10000
 
 	for i := 1; i <= rounds; i++ {
 		for _, monkey := range monkeys {
@@ -34,7 +34,7 @@ func main() {
 	fmt.Println()
 	business := GetMonkeyBusiness(monkeys)
 	fmt.Println()
-	fmt.Println("Monkey Business", business)
+	fmt.Println("Monkey Business after", rounds, "rounds is", business)
 }
 
 func GetMonkeyBusiness(monkeys []*Monkey) int {

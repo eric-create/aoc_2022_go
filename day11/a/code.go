@@ -34,7 +34,7 @@ func main() {
 	fmt.Println()
 	business := GetMonkeyBusiness(monkeys)
 	fmt.Println()
-	fmt.Println("Monkey Business", business)
+	fmt.Println("Monkey Business after", rounds, "rounds is", business)
 }
 
 func GetMonkeyBusiness(monkeys []*Monkey) int {

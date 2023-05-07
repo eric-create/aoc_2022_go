@@ -14,7 +14,7 @@ func main() {
 	// in the text file is being processed.
 	lines = append(lines, "")
 	monkeys := GetMonkeys(lines)
-	rounds := 20
+	rounds := 10000
 
 	for i := 1; i <= rounds; i++ {
 		for _, monkey := range monkeys {

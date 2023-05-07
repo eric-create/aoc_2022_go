@@ -13,28 +13,64 @@ func main() {
 	// Appending an empty string to the array is important, so that the last monkey defined
 	// in the text file is being processed.
 	lines = append(lines, "")
-	monkeys := GetMonkeys(lines)
+	exepctedBusiness := 2713310158
+
+	resultLines := []string{}
+
+	for i := 1; i <= 100; i++ {
+		monkeys := GetMonkeys(lines)
+		business := Play(monkeys, func(item int) int { return item * i })
+		resultLines = append(resultLines, strings.Join(
+			[]string{
+				strconv.Itoa(business),
+				"\t\t",
+				strconv.Itoa(exepctedBusiness - business)},
+			""))
+	}
+	resultText := strings.Join(resultLines, "\n")
+	os.WriteFile("./results.txt", []byte(resultText), 0644)
+}
+
+type Relief func(item int) int
+
+func Play(monkeys []*Monkey, reliefMethod Relief) int {
 	rounds := 10000
 
 	for i := 1; i <= rounds; i++ {
+
+		// The monkeys do their business.
 		for _, monkey := range monkeys {
 			for len(monkey.Items) > 0 {
 				item := monkey.PopItem()
-				item = monkey.Inspect(item)
+				item = monkey.Inspect(item, reliefMethod)
 				test := monkey.Test(item)
 				peer := monkey.GetPeer(test, monkeys)
 				monkey.Throw(item, peer)
 			}
 		}
+
+		// // Print current monkey activity status.
+		// if i%1000 == 0 {
+		// 	PrintInspectionCount(monkeys)
+		// }
 	}
 
+	business := GetMonkeyBusiness(monkeys)
+	return business
+}
+
+func PrintInspectionCount(monkeys []*Monkey) {
+	for _, monkey := range monkeys {
+		fmt.Print(monkey.InspectionCount, ",")
+	}
+	fmt.Println()
+}
+
+func PrintItemStatus(monkeys []*Monkey) {
 	for i, monkey := range monkeys {
 		fmt.Println("Monkey", i, "Items", monkey.Items)
 	}
 	fmt.Println()
-	business := GetMonkeyBusiness(monkeys)
-	fmt.Println()
-	fmt.Println("Monkey Business after", rounds, "rounds is", business)
 }
 
 func GetMonkeyBusiness(monkeys []*Monkey) int {
@@ -46,14 +82,11 @@ func GetMonkeyBusiness(monkeys []*Monkey) int {
 func GetBusinesses(monkeys []*Monkey) []int {
 	businesses := []int{}
 
-	for i, monkey := range monkeys {
-		businesses = append(businesses, monkey.Business)
-
-		fmt.Println("Business of monkey", i, "is: ", businesses[i])
+	for _, monkey := range monkeys {
+		businesses = append(businesses, monkey.InspectionCount)
 	}
 
 	sort.Ints(businesses)
-
 	return businesses
 }
 
@@ -74,7 +107,7 @@ func GetMonkeys(lines []string) []*Monkey {
 
 func GetMonkey(lines []string) *Monkey {
 
-	monkey := &Monkey{Business: 0}
+	monkey := &Monkey{InspectionCount: 0}
 
 	for _, line := range lines {
 		if strings.Contains(line, "Starting items") {
@@ -150,24 +183,25 @@ func GetPeer(line string, result string) int {
 type Operation func(old int) int
 
 type Monkey struct {
-	Items          []int
-	operation      Operation
-	TestingDivisor int
-	PeerTrue       int
-	PeerFalse      int
-	Business       int
+	Items           []int
+	operation       Operation
+	TestingDivisor  int
+	PeerTrue        int
+	PeerFalse       int
+	InspectionCount int
 }
 
 func (monkey *Monkey) PopItem() int {
-	monkey.Business++
 	item := monkey.Items[0]
 	monkey.Items = monkey.Items[1:]
 	return item
 }
 
-func (monkey *Monkey) Inspect(item int) int {
+func (monkey *Monkey) Inspect(item int, reliefMethod Relief) int {
+	monkey.InspectionCount++
 	item = monkey.operation(item)
-	item = item / 3
+	// The stress relief.
+	item = reliefMethod(item)
 	return item
 }
 

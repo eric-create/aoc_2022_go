@@ -17,9 +17,10 @@ func main() {
 
 	resultLines := []string{}
 
-	for i := 1; i <= 100; i++ {
+	for i := 1; i <= 1; i++ {
 		monkeys := GetMonkeys(lines)
-		business := Play(monkeys, func(item int) int { return item * i })
+		business := Play(monkeys, func(item int) int { return item })
+		fmt.Println(business, "\t\t", exepctedBusiness-business)
 		resultLines = append(resultLines, strings.Join(
 			[]string{
 				strconv.Itoa(business),

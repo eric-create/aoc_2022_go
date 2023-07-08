@@ -22,8 +22,10 @@ type Knot struct {
 func main() {
 	lines := ReadFile("./input.txt")
 	net := Net(lines)
-	startX, startY := GetStart(net)
-	end := Discover(&net, startX, startY)
+	startKnot := GetStart(net)
+	end := Discover(startKnot)
+
+	// PrintNetDistances(net)
 
 	fmt.Println((*end).Distance, (*end).X, (*end).Y)
 
@@ -43,84 +45,36 @@ func GetChain(end *Knot) []*Knot {
 	return chain
 }
 
-func Discover(net *[][]*Knot, xStart int, yStart int) *Knot {
-	knot := (*net)[yStart][xStart]
-
-	var link *Knot = nil
-	var end_dummy *Knot = nil
-	var end **Knot = &end_dummy
-
-	ascender, descender := DiscoverPlane(knot, 0, end)
-	// PrintNetDistances(*net)
-
-	for *end == nil {
-		if ascender == nil {
-			link = descender
-		} else {
-			link = ascender
-		}
-		ascender, descender = DiscoverPlane(link, link.Distance, end)
-		// PrintNetDistances(*net)
-	}
-
-	return *end
-}
-
-func DiscoverPlane(knot *Knot, distance int, end **Knot) (*Knot, *Knot) {
-	knot.Distance = distance
-	knot.Discovered = true
-
-	var ascender_dummy *Knot = nil
-	var descender_dummy *Knot = nil
-	var ascender **Knot = &ascender_dummy
-	var descender **Knot = &descender_dummy
-
+func Discover(knot *Knot) *Knot {
 	queue := []*Knot{}
-	_DiscoverPlane(knot, ascender, descender, end, &queue)
-
-	return *ascender, *descender
+	knot.Discovered = true
+	knot.Distance = 0
+	return _Discover(knot, queue)
 }
 
-func _DiscoverPlane(knot *Knot, ascender **Knot, descender **Knot, end **Knot, queue *[]*Knot) {
-
-	if *ascender != nil || *end != nil {
-		return
+func _Discover(knot *Knot, queue []*Knot) *Knot {
+	fmt.Println("Discovering", knot.X, knot.Y)
+	if knot.Label == "end" {
+		return knot
 	}
 
 	for _, neighbor := range knot.Neighbors {
 		if neighbor != nil {
-
-			if !neighbor.Discovered && neighbor.Height == knot.Height {
-				neighbor.Precursor = knot
-				neighbor.Distance = knot.Distance + 1
+			if !neighbor.Discovered && neighbor.Height <= knot.Height+1 {
 				neighbor.Discovered = true
+				neighbor.Distance = knot.Distance + 1
+				neighbor.Precursor = knot
 
-				enqueue(queue, neighbor)
-
-			} else if *ascender == nil && neighbor.Height == knot.Height+1 {
-				*ascender = neighbor
-				(*ascender).Precursor = knot
-				(*ascender).Distance = knot.Distance + 1
-				(*ascender).Discovered = true
-
-			} else if !neighbor.Discovered && neighbor.Height < knot.Height {
-				if *descender == nil || neighbor.Height > (*descender).Height {
-					*descender = neighbor
-					(*descender).Precursor = knot
-					(*descender).Distance = knot.Distance + 1
-					(*descender).Discovered = true
-				}
-			}
-
-			if neighbor.Discovered && neighbor.Label == "end" {
-				*end = neighbor
+				enqueue(&queue, neighbor)
 			}
 		}
 	}
 
-	if len(*queue) > 0 {
-		next := dequeue(queue)
-		_DiscoverPlane(next, ascender, descender, end, queue)
+	if len(queue) > 0 {
+		next := dequeue(&queue)
+		return _Discover(next, queue)
+	} else {
+		return nil
 	}
 }
 
@@ -150,15 +104,15 @@ func SelectionString(net [][]*Knot, selection []*Knot) string {
 	return selectionString
 }
 
-func GetStart(net [][]*Knot) (x, y int) {
+func GetStart(net [][]*Knot) *Knot {
 	for y := 0; y < len(net)-1; y++ {
 		for x := 0; x < len((net)[0])-1; x++ {
-			if (net)[y][x].Label == "start" {
-				return x, y
+			if net[y][x].Label == "start" {
+				return net[y][x]
 			}
 		}
 	}
-	return -1, -1
+	return nil
 }
 
 func GetEnd(net [][]*Knot) (x, y int) {

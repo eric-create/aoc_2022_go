@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -27,7 +26,7 @@ func NewSymbol(s string) *Symbol {
 }
 
 func (s *Symbol) isInteger() bool {
-	return reflect.TypeOf(s).Kind() == reflect.Int
+	return reflect.TypeOf((*s).Value).Kind() == reflect.Int
 }
 
 func (s *Symbol) Integer() *Integer {
@@ -66,7 +65,9 @@ type PacketIterator struct {
 
 func NewPacketIterator(data string) *PacketIterator {
 	p := PacketIterator{Data: data}
-	p.position = -1
+	// It is clear that the first position of the packet string is an opening bracket.
+	// Therefore return that into the Nirvana.
+	p.position = 0
 	// It is clear that the last position in the packet string holds a closing bracket.
 	p.end = len(p.Data) - 2
 
@@ -91,13 +92,15 @@ func (p *PacketIterator) NextSymbol() *Symbol {
 	// Advance to the next position in the packet string.
 	p.position++
 
+	currentCharacter := p.CurrentCharacter()
+
 	// Return brackets.
-	if matched, _ := regexp.MatchString("[\\[\\]]]", p.CurrentCharacter()); matched {
-		return NewSymbol(p.CurrentCharacter())
+	if matched, _ := regexp.MatchString("[\\[\\]]", currentCharacter); matched {
+		return NewSymbol(currentCharacter)
 	}
 
 	// Return number.
-	if matched, _ := regexp.MatchString("[0-9]+", p.CurrentCharacter()); matched {
+	if matched, _ := regexp.MatchString("[0-9]+", currentCharacter); matched {
 		return p.CurrentNumber()
 	}
 
@@ -110,7 +113,7 @@ func (p *PacketIterator) NextSymbol() *Symbol {
 // Gets the number at the current position of the iterator its cursor.
 func (p *PacketIterator) CurrentNumber() *Symbol {
 	number := ""
-	for cursor := p.position + 1; cursor <= p.end; cursor++ {
+	for cursor := p.position; cursor <= p.end; cursor++ {
 		currentSymbol := string(p.Data[cursor])
 		if matched, _ := regexp.MatchString("[0-9]", currentSymbol); matched {
 			number += currentSymbol
@@ -131,9 +134,6 @@ func (p *PacketIterator) CurrentSymbol() *Symbol {
 }
 
 func (p *PacketIterator) MakeNestedList() NestedList {
-	// It is clear that the first position of the packet string is an opening bracket.
-	// Therefore return that into the Nirvana.
-	p.NextSymbol()
 	initialList := List{}
 	makeNestedList(p, &initialList)
 	return &initialList
@@ -198,18 +198,18 @@ func main() {
 	listPairs := getListPairs(lines)
 
 	for _, listPair := range listPairs {
-		isOrderedCorrectly(*listPair[0], *listPair[1])
+		isOrderedCorrectly(listPair[0], listPair[1])
 	}
 }
 
-func getListPairs(lines []string) [][2]*NestedList {
-	listPairs := [][2]*NestedList{}
+func getListPairs(lines []string) [][2]NestedList {
+	listPairs := [][2]NestedList{}
 	pairs := getStringPairs(lines)
 
-	for i, pair := range pairs {
+	for _, pair := range pairs {
 		left := NewPacketIterator(pair[0]).MakeNestedList()
 		right := NewPacketIterator(pair[1]).MakeNestedList()
-		fmt.Println(i, isOrderedCorrectly(left, right))
+		listPairs = append(listPairs, [2]NestedList{left, right})
 	}
 
 	return listPairs
@@ -218,6 +218,12 @@ func getListPairs(lines []string) [][2]*NestedList {
 func isOrderedCorrectly(left NestedList, right NestedList) bool {
 	return false
 }
+
+// func compare(left *List, right *List) bool {
+// 	for leftElement := range left.elements {
+
+// 	}
+// }
 
 func getStringPairs(lines []string) [][2]string {
 

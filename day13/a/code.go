@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -157,49 +158,137 @@ func makeNestedList(p *PacketIterator, list *List) {
 }
 
 type NestedList interface {
-	isList() bool
-	isInt() bool
+	IsList() bool
+	IsInteger() bool
+	List() *List
+	Integer() *Integer
 }
 
 type Integer struct {
 	Value int
 }
 
-func (i *Integer) isList() bool {
+func (i *Integer) IsList() bool {
 	return false
 }
 
-func (i *Integer) isInt() bool {
+func (i *Integer) IsInteger() bool {
 	return true
+}
+
+func (i *Integer) List() *List {
+	panic("This is of type Integer, not of type List!")
+}
+
+func (i *Integer) Integer() *Integer {
+	return i
 }
 
 type List struct {
 	elements []NestedList
 }
 
-func (l *List) isList() bool {
+func (l *List) IsList() bool {
 	return true
 }
 
-func (l *List) isInt() bool {
+func (l *List) IsInteger() bool {
 	return false
+}
+
+func (l *List) List() *List {
+	return l
+}
+
+func (l *List) Integer() *Integer {
+	panic("This is of type List, not of type Integer!")
 }
 
 func (l *List) AppendInteger(i *Integer) {
 	l.elements = append(l.elements, i)
 }
 
-func (l *List) AppendList(nestedList *List) {
-	l.elements = append(l.elements, nestedList)
+func (l *List) AppendList(list *List) {
+	l.elements = append(l.elements, list)
 }
 
 func main() {
 	lines := ReadLines("./input.txt")
 	listPairs := getListPairs(lines)
 
-	for _, listPair := range listPairs {
-		isOrderedCorrectly(listPair[0], listPair[1])
+	for i, listPair := range listPairs {
+		isCorrectlyOrdered := Compare(listPair[0], listPair[1]) == Sucess
+		fmt.Println(i, isCorrectlyOrdered)
 	}
+}
+
+type Result int
+
+const (
+	Sucess Result = iota
+	Continue
+	Error
+)
+
+func Compare(left NestedList, right NestedList) Result {
+
+	if left.IsInteger() && right.IsInteger() { // Both elements are integers.
+		return CompareIntegers(left, right)
+
+	} else if left.IsList() && right.IsList() { // Both elements are lists.
+		return CompareLists(left, right)
+
+	} else { // One element is a list and one is an integer.
+
+		// Left element is a list and right element is an integer.
+		if left.IsList() && right.IsInteger() {
+			rightList := List{[]NestedList{right.Integer()}}
+			return CompareLists(left, &rightList)
+
+		} else { // Left element is an integer and right element is a list.
+			leftList := List{[]NestedList{left.Integer()}}
+			return CompareLists(left, &leftList)
+		}
+	}
+}
+
+func CompareIntegers(left NestedList, right NestedList) Result {
+	leftInt := left.Integer().Value
+	rightInt := right.Integer().Value
+
+	if leftInt < rightInt {
+		return Sucess
+	} else if leftInt == rightInt {
+		return Continue
+	} else {
+		return Error
+	}
+}
+
+func CompareLists(left NestedList, right NestedList) Result {
+	leftList := left.List()
+	rightList := right.List()
+
+	for i, leftElement := range leftList.elements {
+
+		// If the right list runs out of elements, this is an Error.
+		if i >= len(rightList.elements) {
+			return Error
+		}
+
+		result := Compare(leftElement, rightList.elements[i])
+
+		// Only return a "breaking result", that is the left number being smaller or bigger
+		// than the right number.
+		// If the left number equals the right number, continue comparing the next elements
+		// in the list.
+		if result == Error || result == Sucess {
+			return result
+		}
+	}
+
+	// The left list ran out of elements, this is a Success.
+	return Sucess
 }
 
 func getListPairs(lines []string) [][2]NestedList {
@@ -214,16 +303,6 @@ func getListPairs(lines []string) [][2]NestedList {
 
 	return listPairs
 }
-
-func isOrderedCorrectly(left NestedList, right NestedList) bool {
-	return false
-}
-
-// func compare(left *List, right *List) bool {
-// 	for leftElement := range left.elements {
-
-// 	}
-// }
 
 func getStringPairs(lines []string) [][2]string {
 

@@ -248,12 +248,12 @@ func Compare(left NestedList, right NestedList) Result {
 
 		// Left element is a list and right element is an integer.
 		if left.IsList() && right.IsInteger() {
-			rightList := List{[]NestedList{right.Integer()}}
-			return CompareLists(left, &rightList)
+			newRightList := List{[]NestedList{right.Integer()}}
+			return CompareLists(left, &newRightList)
 
 		} else { // Left element is an integer and right element is a list.
-			leftList := List{[]NestedList{left.Integer()}}
-			return CompareLists(&leftList, right)
+			newLeftList := List{[]NestedList{left.Integer()}}
+			return CompareLists(&newLeftList, right)
 		}
 	}
 }
@@ -290,6 +290,12 @@ func CompareLists(left NestedList, right NestedList) Result {
 		// in the list.
 		if result == Error || result == Sucess {
 			return result
+		}
+
+		// If all the element pairs are equal and both lists run out of elements at the
+		// same time, that is Continue.
+		if i == len(leftList.elements)-1 && i == len(rightList.elements)-1 {
+			return Continue
 		}
 	}
 

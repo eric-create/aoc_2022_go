@@ -86,7 +86,7 @@ func (p *PacketIterator) CurrentCharacter() string {
 func (p *PacketIterator) NextSymbol() *Symbol {
 
 	// If the end of the packet is reached, return nil.
-	if p.position+1 == p.end {
+	if p.position == p.end {
 		return nil
 	}
 
@@ -215,11 +215,17 @@ func (l *List) AppendList(list *List) {
 func main() {
 	lines := ReadLines("./input.txt")
 	listPairs := getListPairs(lines)
+	sum := 0
 
 	for i, listPair := range listPairs {
+		index := i + 1
 		isCorrectlyOrdered := Compare(listPair[0], listPair[1]) == Sucess
-		fmt.Println(i, isCorrectlyOrdered)
+		if isCorrectlyOrdered {
+			fmt.Println(index, isCorrectlyOrdered)
+			sum += index
+		}
 	}
+	fmt.Println("\n", sum)
 }
 
 type Result int
@@ -247,7 +253,7 @@ func Compare(left NestedList, right NestedList) Result {
 
 		} else { // Left element is an integer and right element is a list.
 			leftList := List{[]NestedList{left.Integer()}}
-			return CompareLists(left, &leftList)
+			return CompareLists(&leftList, right)
 		}
 	}
 }
@@ -297,11 +303,30 @@ func getListPairs(lines []string) [][2]NestedList {
 
 	for _, pair := range pairs {
 		left := NewPacketIterator(pair[0]).MakeNestedList()
+		PrintList(left)
+		fmt.Println()
 		right := NewPacketIterator(pair[1]).MakeNestedList()
+		PrintList(right)
+		fmt.Println()
+		fmt.Println()
 		listPairs = append(listPairs, [2]NestedList{left, right})
 	}
 
 	return listPairs
+}
+
+func PrintList(nl NestedList) {
+	if nl.IsList() {
+		fmt.Print("[")
+		list := nl.List()
+		for _, e := range list.elements {
+			PrintList(e)
+		}
+		fmt.Print("]")
+	} else {
+		integer := nl.Integer()
+		fmt.Print(integer.Value, ",")
+	}
 }
 
 func getStringPairs(lines []string) [][2]string {

@@ -221,7 +221,7 @@ func main() {
 		index := i + 1
 		isCorrectlyOrdered := Compare(listPair[0], listPair[1]) == Sucess
 		if isCorrectlyOrdered {
-			fmt.Println(index, isCorrectlyOrdered)
+			fmt.Print(index, ",")
 			sum += index
 		}
 	}
@@ -308,30 +308,40 @@ func getListPairs(lines []string) [][2]NestedList {
 	pairs := getStringPairs(lines)
 
 	for _, pair := range pairs {
+
 		left := NewPacketIterator(pair[0]).MakeNestedList()
-		PrintList(left)
-		fmt.Println()
 		right := NewPacketIterator(pair[1]).MakeNestedList()
+		listPairs = append(listPairs, [2]NestedList{left, right})
+
+		PrintList(left)
 		PrintList(right)
 		fmt.Println()
-		fmt.Println()
-		listPairs = append(listPairs, [2]NestedList{left, right})
 	}
 
 	return listPairs
 }
 
 func PrintList(nl NestedList) {
+	packetString := ""
+	PacketString(nl, &packetString)
+	packetString = packetString[:len(packetString)-1]
+	fmt.Println(packetString)
+}
+
+func PacketString(nl NestedList, packetString *string) {
 	if nl.IsList() {
-		fmt.Print("[")
+		*packetString += "["
 		list := nl.List()
 		for _, e := range list.elements {
-			PrintList(e)
+			PacketString(e, packetString)
 		}
-		fmt.Print("]")
+		if len(list.elements) > 0 {
+			*packetString = string((*packetString)[:len(*packetString)-1])
+		}
+		*packetString += "],"
 	} else {
 		integer := nl.Integer()
-		fmt.Print(integer.Value, ",")
+		*packetString += fmt.Sprintf("%d,", integer.Value)
 	}
 }
 

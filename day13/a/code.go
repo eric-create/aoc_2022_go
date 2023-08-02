@@ -114,14 +114,18 @@ func (p *PacketIterator) NextSymbol() *Symbol {
 // Gets the number at the current position of the iterator its cursor.
 func (p *PacketIterator) CurrentNumber() *Symbol {
 	number := ""
+
+	stepNumber := 0
 	for cursor := p.position; cursor <= p.end; cursor++ {
 		currentSymbol := string(p.Data[cursor])
 		if matched, _ := regexp.MatchString("[0-9]", currentSymbol); matched {
 			number += currentSymbol
+			stepNumber++
 		} else {
 			break
 		}
 	}
+	p.position += stepNumber - 1
 	return NewSymbol(number)
 }
 

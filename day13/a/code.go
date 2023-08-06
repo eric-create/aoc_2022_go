@@ -10,6 +10,22 @@ import (
 	"strings"
 )
 
+func main() {
+	lines := ReadLines("./input.txt")
+	listPairs := getListPairs(lines)
+	sum := 0
+
+	for i, listPair := range listPairs {
+		index := i + 1
+		isCorrectlyOrdered := Compare(listPair[0], listPair[1]) == Success
+		if isCorrectlyOrdered {
+			fmt.Print(index, ",")
+			sum += index
+		}
+	}
+	fmt.Println("\n", sum)
+}
+
 type Symbol struct {
 	Value any
 }
@@ -216,26 +232,10 @@ func (l *List) AppendList(list *List) {
 	l.elements = append(l.elements, list)
 }
 
-func main() {
-	lines := ReadLines("./input.txt")
-	listPairs := getListPairs(lines)
-	sum := 0
-
-	for i, listPair := range listPairs {
-		index := i + 1
-		isCorrectlyOrdered := Compare(listPair[0], listPair[1]) == Sucess
-		if isCorrectlyOrdered {
-			fmt.Print(index, ",")
-			sum += index
-		}
-	}
-	fmt.Println("\n", sum)
-}
-
 type Result int
 
 const (
-	Sucess Result = iota
+	Success Result = iota
 	Continue
 	Error
 )
@@ -267,7 +267,7 @@ func CompareIntegers(left NestedList, right NestedList) Result {
 	rightInt := right.Integer().Value
 
 	if leftInt < rightInt {
-		return Sucess
+		return Success
 	} else if leftInt == rightInt {
 		return Continue
 	} else {
@@ -292,7 +292,7 @@ func CompareLists(left NestedList, right NestedList) Result {
 		// than the right number.
 		// If the left number equals the right number, continue comparing the next elements
 		// in the list.
-		if result == Error || result == Sucess {
+		if result == Error || result == Success {
 			return result
 		}
 
@@ -304,7 +304,7 @@ func CompareLists(left NestedList, right NestedList) Result {
 	}
 
 	// The left list ran out of elements, this is a Success.
-	return Sucess
+	return Success
 }
 
 func getListPairs(lines []string) [][2]NestedList {

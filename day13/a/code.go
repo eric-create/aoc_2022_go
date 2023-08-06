@@ -279,14 +279,14 @@ func CompareLists(left NestedList, right NestedList) Result {
 	leftList := left.List()
 	rightList := right.List()
 
-	if len(leftList.elements) > 0 && len(rightList.elements) == 0 {
-		return Error
-	}
-
 	for i, leftElement := range leftList.elements {
 
-		rightElement := rightList.elements[i]
-		result := Compare(leftElement, rightElement)
+		// If the right list runs out of elements, this is an Error.
+		if i == len(rightList.elements) {
+			return Error
+		}
+
+		result := Compare(leftElement, rightList.elements[i])
 
 		// Only return a "breaking result", that is the left number being smaller or bigger
 		// than the right number.
@@ -295,20 +295,14 @@ func CompareLists(left NestedList, right NestedList) Result {
 		if result == Error || result == Success {
 			return result
 		}
-
-		// If all the element pairs are equal and both lists run out of elements at the
-		// same time, that is Continue.
-		if i == len(leftList.elements)-1 && i == len(rightList.elements)-1 {
-			return Continue
-		}
-
-		// If the right list runs out of elements, this is an Error.
-		if i == len(rightList.elements)-1 {
-			return Error
-		}
 	}
 
-	// The left list ran out of elements, this is a Success.
+	// The left list ran out of elements and is of the same size as the right list.
+	if len(leftList.elements) == len(rightList.elements) {
+		return Continue
+	}
+
+	// The left list ran out of elements, but is smaller than the right list.
 	return Success
 }
 

@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -12,19 +14,40 @@ func main() {
 	lines := ReadLines("./input.txt")
 
 	sensors := GetSensors(lines)
-
 	xMin, yMin, xMax, yMax := EventHorizon(sensors)
-	field := InitField(xMin, yMin, xMax, yMax)
-	SetField(sensors, field)
+	numCovered := Coverage(sensors, xMin, xMax, 10)
+	fmt.Println(numCovered)
+	fmt.Println(xMin, yMin, xMax, yMax)
+}
 
-	for _, sensor := range *sensors {
-		sensor.Sense(field)
+func Coverage(sensors *[]*Sensor, xMin, xMax, y int) int {
+	coverage := []int{}
+
+	for x := xMin; x <= xMax; x++ {
+		for _, sensor := range *sensors {
+			if sensor.Covers(Coordinate{x, y}) {
+				if len(coverage) == 0 || coverage[len(coverage)-1] != x {
+					coverage = append(coverage, x)
+				}
+			}
+		}
 	}
 
-	numCovered := NumCovered(10, field)
-	fmt.Println(numCovered)
+	count := len(coverage)
+	beacons := []*Coordinate{}
 
-	// PrintField(field)
+	for _, sensor := range *sensors {
+		beacon := sensor.Beacon
+
+		if beacon.Y == y && beacon.X >= xMin && beacon.X <= xMax {
+			if !slices.Contains(beacons, beacon) {
+				beacons = append(beacons, beacon)
+				count--
+			}
+		}
+	}
+
+	return count
 }
 
 func EventHorizon(sensors *[]*Sensor) (int, int, int, int) {
@@ -32,148 +55,83 @@ func EventHorizon(sensors *[]*Sensor) (int, int, int, int) {
 	xMax, yMax := 0, 0
 
 	for _, sensor := range *sensors {
-		pos := sensor.Position
+		position := sensor.Position
 
-		if pos.X > xMax {
-			xMax = pos.X
+		if position.X+sensor.Radius > xMax {
+			xMax = position.X + sensor.Radius
 		}
 
-		if pos.Y > yMax {
-			yMax = pos.Y
+		if position.Y+sensor.Radius > yMax {
+			yMax = position.Y + sensor.Radius
 		}
 
-		if pos.X < xMin {
-			xMin = pos.X
+		if position.X-sensor.Radius < xMin {
+			xMin = position.X - sensor.Radius
 		}
 
-		if pos.Y < yMin {
-			yMin = pos.Y
-		}
-	}
-
-	return xMin - 9, yMin - 9, xMax + 9, yMax + 9
-}
-
-func NumCovered(y int, field *[][]*Coordinate) int {
-	xMax := len((*field)[0]) - 1
-	covered := 0
-
-	for x := 0; x <= xMax; x++ {
-		symbol := (*field)[Norm(y)][x].Symbol
-
-		if symbol == "#" {
-			covered++
+		if position.Y-sensor.Radius < yMin {
+			yMin = position.Y - sensor.Radius
 		}
 	}
 
-	return covered
-}
-
-func SetField(sensors *[]*Sensor, field *[][]*Coordinate) {
-	for _, sensor := range *sensors {
-
-		sensorPos := &sensor.Position
-		(*field)[sensorPos.NormY()][sensorPos.NormX()] = sensorPos
-
-		beaconPos := sensor.Beacons[0]
-		(*field)[beaconPos.NormY()][beaconPos.NormX()] = beaconPos
-	}
-}
-
-func PrintField(field *[][]*Coordinate) {
-	for y := 0; y < len(*field); y++ {
-		for x := 0; x < len((*field)[0]); x++ {
-			fmt.Print((*field)[y][x].Symbol)
-		}
-		fmt.Println()
-	}
-}
-
-func InitField(xMin, yMin, xMax, yMax int) *[][]*Coordinate {
-	field := [][]*Coordinate{}
-
-	for y := yMin; y <= yMax; y++ {
-		field = append(field, []*Coordinate{})
-		for x := xMin; x <= xMax; x++ {
-			if x == 0 && y == 0 {
-				field[Norm(y)] = append(field[Norm(y)], &Coordinate{0, 0, "M"})
-			} else {
-				field[Norm(y)] = append(field[Norm(y)], &Coordinate{x, y, "."})
-			}
-		}
-	}
-
-	return &field
-}
-
-func GetFieldConstraints(sensors *[]*Sensor) (int, int, int, int) {
-	xMin, yMin, xMax, yMax := 0, 0, 0, 0
-
-	for _, sensor := range *sensors {
-		pos := (*sensor).Position
-		if pos.X > xMax {
-			xMax = pos.X
-		}
-		if pos.Y > yMax {
-			yMax = pos.Y
-		}
-		if pos.X < xMin {
-			xMin = pos.X
-		}
-		if pos.Y < yMin {
-			yMin = pos.Y
-		}
-	}
-
-	// The sensor can see a distance of 9.
-	return xMin - 9, yMin - 9, xMax + 9, yMax + 9
+	return xMin, yMin, xMax, yMax
 }
 
 func GetSensors(lines []string) *[]*Sensor {
 	sensors := []*Sensor{}
+	beacons := []*Coordinate{}
 
 	for _, line := range lines {
-		sensor := GetSensor(line)
+		sensor := GetSensor(line, &beacons)
 		sensors = append(sensors, sensor)
 	}
 
 	return &sensors
 }
 
-func GetSensor(line string) *Sensor {
+func GetSensor(line string, beacons *[]*Coordinate) *Sensor {
 	components := strings.Split(line, ":")
 	prefix := components[0]
 	suffix := components[1]
 
-	sensorCoordinate := GetCoordinate(prefix[10:], "S")
-	beaconCoordinate := GetCoordinate(suffix[22:], "B")
+	sensorCoordinate := NewCoordinate(prefix[10:])
+	beaconCoordinate := NewCoordinate(suffix[22:])
 
-	sensor := Sensor{
-		Position: sensorCoordinate,
-		Beacons:  []*Coordinate{&beaconCoordinate},
-	}
+	beacon := GetBeacon(&beaconCoordinate, beacons)
 
-	return &sensor
+	sensor := NewSensor(sensorCoordinate, beacon)
+
+	return sensor
 }
 
-func GetCoordinate(s string, symbol string) Coordinate {
+func GetBeacon(newBeacon *Coordinate, beacons *[]*Coordinate) *Coordinate {
+	for _, beacon := range *beacons {
+		if beacon.X == newBeacon.X && beacon.Y == newBeacon.Y {
+			return beacon
+		}
+	}
+
+	*beacons = append(*beacons, newBeacon)
+	return newBeacon
+}
+
+func NewCoordinate(s string) Coordinate {
 	regex := regexp.MustCompile(`x=(-?\d+), y=(-?\d+)`)
 	matches := regex.FindStringSubmatch(s)
 
 	x, _ := strconv.Atoi(matches[1])
 	y, _ := strconv.Atoi(matches[2])
 
-	return Coordinate{x, y, symbol}
+	return Coordinate{x, y}
 }
 
 type Coordinate struct {
-	X      int
-	Y      int
-	Symbol string
+	X int
+	Y int
 }
 
 func (c *Coordinate) Navigate(direction Coordinate, times int) *Coordinate {
-	new := Coordinate{c.X, c.Y, ""}
+	new := Coordinate{c.X, c.Y}
 
 	for i := 0; i < times; i++ {
 		new.X += direction.X
@@ -183,60 +141,30 @@ func (c *Coordinate) Navigate(direction Coordinate, times int) *Coordinate {
 	return &new
 }
 
-func (c *Coordinate) NormX() int {
-	return Norm((*c).X)
-}
-
-func (c *Coordinate) NormY() int {
-	return Norm((*c).Y)
-}
-
-func Norm(i int) int {
-	return i + 9
-}
-
 type Sensor struct {
 	Position Coordinate
-	Beacons  []*Coordinate
+	Beacon   *Coordinate
+	Radius   int
 }
 
-func (s *Sensor) Sense(field *[][]*Coordinate) {
-	movements := [][2]Coordinate{
-		// Right-Up
-		{Coordinate{1, 0, ""}, Coordinate{0, -1, ""}},
-		// Down-Right
-		{Coordinate{0, 1, ""}, Coordinate{1, 0, ""}},
-		// Left-Down
-		{Coordinate{-1, 0, ""}, Coordinate{0, 1, ""}},
-		// Up-Left
-		{Coordinate{0, -1, ""}, Coordinate{-1, 0, ""}}}
+func (s *Sensor) Covers(position Coordinate) bool {
+	distance := Distance(s.Position, position)
+	radius := s.Radius
+	return distance <= radius
+}
 
-	detected := false
+func NewSensor(position Coordinate, beacon *Coordinate) *Sensor {
+	return &Sensor{
+		Position: position,
+		Beacon:   beacon,
+		Radius:   Distance(position, *beacon)}
+}
 
-	for i := 0; i <= 9; i++ {
-
-		for _, movement := range movements {
-			priMovement := movement[0]
-			secMovement := movement[1]
-
-			for j := 0; j <= i; j++ {
-				targetPos := s.Position.Navigate(priMovement, j).Navigate(secMovement, i-j)
-				cursor := (*field)[targetPos.NormY()][targetPos.NormX()]
-
-				if cursor.Symbol == "." {
-					cursor.Symbol = "#"
-
-				} else if cursor.Symbol == "B" {
-					detected = true
-
-				}
-			}
-		}
-
-		if detected {
-			return
-		}
-	}
+func Distance(start, end Coordinate) int {
+	xDiff := int(math.Abs(float64(start.X) - float64(end.X)))
+	yDiff := int(math.Abs(float64(start.Y) - float64(end.Y)))
+	distance := xDiff + yDiff
+	return distance
 }
 
 func ReadLines(path string) []string {

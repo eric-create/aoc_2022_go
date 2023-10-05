@@ -15,7 +15,7 @@ func main() {
 
 	sensors := GetSensors(lines)
 	xMin, yMin, xMax, yMax := EventHorizon(sensors)
-	numCovered := Coverage(sensors, xMin, xMax, 10)
+	numCovered := Coverage(sensors, xMin, xMax, 2000000) // 2000000 or 10
 	fmt.Println(numCovered)
 	fmt.Println(xMin, yMin, xMax, yMax)
 }
